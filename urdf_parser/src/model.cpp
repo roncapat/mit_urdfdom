@@ -47,7 +47,8 @@ namespace urdf{
 bool parseMaterial(Material &material, tinyxml2::XMLElement *config, bool only_name_is_ok);
 bool parseLink(Link &link, tinyxml2::XMLElement *config);
 bool parseJoint(Joint &joint, tinyxml2::XMLElement *config);
-bool parseConstraint(Constraint &constraint, tinyxml2::XMLElement *config);
+bool parseJointConstraint(JointConstraint &constraint, tinyxml2::XMLElement *config);
+bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement *config);
 
 ModelInterfaceSharedPtr  parseURDFFile(const std::string &path)
 {
@@ -238,13 +239,13 @@ ModelInterfaceSharedPtr  parseURDF(const std::string &xml_string)
     }
   }
 
-  // Get all Constraint elements
-  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("constraint"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("constraint"))
+  // Get all Joint Constraint elements
+  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("joint_constraint"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("joint_constraint"))
   {
-    ConstraintSharedPtr constraint;
-    constraint.reset(new Constraint);
+    JointConstraintSharedPtr constraint;
+    constraint.reset(new JointConstraint);
 
-    if (parseConstraint(*constraint, constraint_xml))
+    if (parseJointConstraint(*constraint, constraint_xml))
     {
       if (model->getConstraint(constraint->name))
       {
@@ -255,6 +256,34 @@ ModelInterfaceSharedPtr  parseURDF(const std::string &xml_string)
       else
       {
         model->constraints_.insert(make_pair(constraint->name,constraint));
+        CONSOLE_BRIDGE_logDebug("urdfdom: successfully added a new constraint '%s'", constraint->name.c_str());
+      }
+    }
+    else
+    {
+      CONSOLE_BRIDGE_logError("constraint xml is not initialized correctly");
+      model.reset();
+      return model;
+    }
+  }
+
+  // Get all Loop Constraint elements
+  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("loop_constraint"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("loop_constraint"))
+  {
+    LoopConstraintSharedPtr constraint;
+    constraint.reset(new LoopConstraint);
+
+    if (parseLoopConstraint(*constraint, constraint_xml))
+    {
+      if (model->getConstraint(constraint->name))
+      {
+        CONSOLE_BRIDGE_logError("constraint '%s' is not unique.", constraint->name.c_str());
+        model.reset();
+        return model;
+      }
+      else
+      {
+        model->constraints_.insert(make_pair(constraint->name, constraint));
         CONSOLE_BRIDGE_logDebug("urdfdom: successfully added a new constraint '%s'", constraint->name.c_str());
       }
     }
