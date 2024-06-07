@@ -346,6 +346,46 @@ TEST(URDF_UNIT_TEST, parse_color_doubles)
   EXPECT_EQ(0.908, urdf->links_["l1"]->inertial->izz);
 }
 
+// TODO(@MatthewChignoli): Should probably write a unit test or two here...
+TEST(URDF_UNIT_TEST, parse_constraint)
+{
+  std::string joint_str =
+    "<robot name=\"test\">"
+    "  <joint name=\"j1\" type=\"continuous\">"
+    "    <parent link=\"base_link\"/>"
+    "    <child link=\"l1\"/>"
+    "  </joint>"
+    "  <joint name=\"j2\" type=\"continuous\">"
+    "    <parent link=\"l1\"/>"
+    "    <child link=\"l2\"/>"
+    "  </joint>"
+    "  <joint name=\"j3\" type=\"continuous\">"
+    "    <parent link=\"base_link\"/>"
+    "    <child link=\"l3\"/>"
+    "  </joint>"
+    "  <constraint name=\"c1\">"
+    "    <parent link=\"l2\"/>"
+    "    <child link=\"l3\"/>"
+    "  </constraint>"
+    "  <link name=\"base_link\"/>"
+    "  <link name=\"l1\"/>"
+    "  <link name=\"l2\"/>"
+    "  <link name=\"l3\"/>"
+    "</robot>";
+
+  urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(joint_str);
+
+  EXPECT_EQ(4u, urdf->links_.size());
+  EXPECT_EQ(3u, urdf->joints_.size());
+  EXPECT_EQ(1u, urdf->constraints_.size());
+
+  EXPECT_TRUE(std::find(urdf->links_["l2"]->loop_links.begin(),
+                        urdf->links_["l2"]->loop_links.end(),
+                        urdf->links_["l3"]) != urdf->links_["l2"]->loop_links.end());
+  EXPECT_TRUE(std::find(urdf->links_["l3"]->loop_links.begin(),
+                        urdf->links_["l3"]->loop_links.end(),
+                        urdf->links_["l1"]) != urdf->links_["l3"]->loop_links.end());
+}
 
 int main(int argc, char **argv)
 {
