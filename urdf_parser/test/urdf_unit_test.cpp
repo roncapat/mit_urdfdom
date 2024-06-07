@@ -346,7 +346,6 @@ TEST(URDF_UNIT_TEST, parse_color_doubles)
   EXPECT_EQ(0.908, urdf->links_["l1"]->inertial->izz);
 }
 
-// TODO(@MatthewChignoli): Should probably write a unit test or two here...
 TEST(URDF_UNIT_TEST, parse_constraint)
 {
   std::string joint_str =
