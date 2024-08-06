@@ -444,6 +444,16 @@ bool parseJoint(Joint &joint, tinyxml2::XMLElement* config)
     }
   }
 
+  // Get whether the joint is included in the independent coordinates
+  const char *independent = config->Attribute("independent");
+  joint.independent = true;
+  if (independent)
+  {
+    std::string independent_str = independent;
+    if (independent_str != "true")
+      joint.independent = false;
+  }
+
   // Get limit
   tinyxml2::XMLElement *limit_xml = config->FirstChildElement("limit");
   if (limit_xml)

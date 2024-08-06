@@ -147,19 +147,23 @@ bool parseJointConstraint(JointConstraint &constraint, tinyxml2::XMLElement* con
   if(!parseConstraint(constraint, config))
     return false;
 
-  // Get gear ratio
-  const char* gr = config->Attribute("gear_ratio");
-  if (gr == NULL){
-    CONSOLE_BRIDGE_logDebug("urdfdom.gear_ratio: no gear ratio");
-    return false;
-  }
-  else
+  // Get Gear Ratio
+  tinyxml2::XMLElement *gr_xml = config->FirstChildElement("gear_ratio");
+  if (gr_xml)
   {
-    try {
-      constraint.gear_ratio = strToDouble(gr);
-    } catch (std::runtime_error &) {
-      CONSOLE_BRIDGE_logError("lower value (%s) is not a valid float", gr);
+    const char* gr = gr_xml->Attribute("value");
+    if (gr == NULL){
+      CONSOLE_BRIDGE_logDebug("urdfdom.gear_ratio: no gear ratio");
       return false;
+    }
+    else
+    {
+      try {
+        constraint.gear_ratio = strToDouble(gr);
+      } catch (std::runtime_error &) {
+        CONSOLE_BRIDGE_logError("gear ratio (%s) is not a valid float", gr);
+        return false;
+      }
     }
   }
 
