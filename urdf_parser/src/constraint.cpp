@@ -25,33 +25,33 @@ bool parseConstraint(ConstraintType &constraint, tinyxml2::XMLElement* config)
   }
   constraint.name = name;
 
-  // Get Parent Link
-  tinyxml2::XMLElement *parent_xml = config->FirstChildElement("parent");
-  if (parent_xml)
+  // Get Predecessor Link
+  tinyxml2::XMLElement *predecessor_xml = config->FirstChildElement("predecessor");
+  if (predecessor_xml)
   {
-    const char *pname = parent_xml->Attribute("link");
+    const char *pname = predecessor_xml->Attribute("link");
     if (!pname)
     {
-      CONSOLE_BRIDGE_logInform("no parent link name specified for Constraint link [%s]. this might be the root?", constraint.name.c_str());
+      CONSOLE_BRIDGE_logInform("no predecessor link name specified for Constraint link [%s]. this might be the root?", constraint.name.c_str());
     }
     else
     {
-      constraint.parent_link_name = std::string(pname);
+      constraint.predecessor_link_name = std::string(pname);
     }
   }
 
-  // Get Child Link
-  tinyxml2::XMLElement *child_xml = config->FirstChildElement("child");
-  if (child_xml)
+  // Get Successor Link
+  tinyxml2::XMLElement *succesor_xml = config->FirstChildElement("successor");
+  if (succesor_xml)
   {
-    const char *pname = child_xml->Attribute("link");
-    if (!pname)
+    const char *sname = succesor_xml->Attribute("link");
+    if (!sname)
     {
-      CONSOLE_BRIDGE_logInform("no child link name specified for Constraint link [%s].", constraint.name.c_str());
+      CONSOLE_BRIDGE_logInform("no succesor link name specified for Constraint link [%s].", constraint.name.c_str());
     }
     else
     {
-      constraint.child_link_name = std::string(pname);
+      constraint.successor_link_name = std::string(sname);
     }
   }
 
@@ -70,13 +70,13 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
   if (!parent_origin_xml)
   {
     CONSOLE_BRIDGE_logDebug("urdfdom: Constraint [%s] missing parent_origin tag describing transform from Parent Link to Constraint Frame, (using Identity transform).", constraint.name.c_str());
-    constraint.parent_to_constraint_origin_transform.clear();
+    constraint.predecessor_to_joint_origin_transform.clear();
   }
   else
   {
-    if (!parsePoseInternal(constraint.parent_to_constraint_origin_transform, parent_origin_xml))
+    if (!parsePoseInternal(constraint.predecessor_to_joint_origin_transform, parent_origin_xml))
     {
-      constraint.parent_to_constraint_origin_transform.clear();
+      constraint.predecessor_to_joint_origin_transform.clear();
       CONSOLE_BRIDGE_logError("Malformed parent origin element for constraint [%s]", constraint.name.c_str());
       return false;
     }
@@ -87,51 +87,62 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
   if (!child_origin_xml)
   {
     CONSOLE_BRIDGE_logDebug("urdfdom: Constraint [%s] missing child_origin tag describing transform from Child Link to Constraint Frame, (using Identity transform).", constraint.name.c_str());
-    constraint.child_to_constraint_origin_transform.clear();
+    constraint.successor_to_joint_origin_transform.clear();
   }
   else
   {
-    if (!parsePoseInternal(constraint.child_to_constraint_origin_transform, child_origin_xml))
+    if (!parsePoseInternal(constraint.successor_to_joint_origin_transform, child_origin_xml))
     {
-      constraint.child_to_constraint_origin_transform.clear();
+      constraint.successor_to_joint_origin_transform.clear();
       CONSOLE_BRIDGE_logError("Malformed child origin element for constraint [%s]", constraint.name.c_str());
       return false;
     }
   }
 
-  // Get Constraint Axes
-  tinyxml2::XMLElement *pos_axis_xml = config->FirstChildElement("pos_axis");
-  if (!pos_axis_xml){
-    CONSOLE_BRIDGE_logDebug("urdfdom: no position_axis element for Constraint [%s], defaulting to (1,1,1) axis", constraint.name.c_str());
-    constraint.position_axis = Vector3(1.0, 1.0, 1.0);
-  }
-  else{
-    if (pos_axis_xml->Attribute("xyz")){
-      try {
-        constraint.position_axis.init(pos_axis_xml->Attribute("xyz"));
-      }
-      catch (ParseError &e) {
-        constraint.position_axis.clear();
-        CONSOLE_BRIDGE_logError("Malformed position_axis element for constraint [%s]: %s", constraint.name.c_str(), e.what());
-        return false;
-      }
-    }
+    // Get Joint type
+  const char* type_char = config->Attribute("type");
+  if (!type_char)
+  {
+    CONSOLE_BRIDGE_logError("constraint [%s] has no type, check to see if it's a reference.", constraint.name.c_str());
+    return false;
   }
 
-  tinyxml2::XMLElement *rot_axis_xml = config->FirstChildElement("rot_axis");
-  if (!rot_axis_xml){
-    CONSOLE_BRIDGE_logDebug("urdfdom: no rotation_axis element for Constraint [%s], defaulting to (1,1,1) axis", constraint.name.c_str());
-    constraint.rotation_axis = Vector3(1.0, 1.0, 1.0);
+  std::string type_str = type_char;
+  if (type_str == "planar")
+    constraint.type = LoopConstraint::PLANAR;
+  else if (type_str == "revolute")
+    constraint.type = LoopConstraint::REVOLUTE;
+  else if (type_str == "continuous")
+    constraint.type = LoopConstraint::CONTINUOUS;
+  else if (type_str == "prismatic")
+    constraint.type = LoopConstraint::PRISMATIC;
+  else if (type_str == "fixed")
+    constraint.type = LoopConstraint::FIXED;
+  else
+  {
+    CONSOLE_BRIDGE_logError("Joint [%s] has no known type [%s]", constraint.name.c_str(), type_str.c_str());
+    return false;
   }
-  else{
-    if (pos_axis_xml->Attribute("xyz")){
-      try {
-        constraint.rotation_axis.init(rot_axis_xml->Attribute("xyz"));
-      }
-      catch (ParseError &e) {
-        constraint.rotation_axis.clear();
-        CONSOLE_BRIDGE_logError("Malformed rotation_axis element for constraint [%s]: %s", constraint.name.c_str(), e.what());
-        return false;
+
+    // Get Joint Axis
+  if (constraint.type != LoopConstraint::FIXED)
+  {
+    // axis
+    tinyxml2::XMLElement *axis_xml = config->FirstChildElement("axis");
+    if (!axis_xml){
+      CONSOLE_BRIDGE_logDebug("urdfdom: no axis element for constraint [%s], defaulting to (1,0,0) axis", constraint.name.c_str());
+      constraint.axis = Vector3(1.0, 0.0, 0.0);
+    }
+    else{
+      if (axis_xml->Attribute("xyz")){
+        try {
+          constraint.axis.init(axis_xml->Attribute("xyz"));
+        }
+        catch (ParseError &e) {
+          constraint.axis.clear();
+          CONSOLE_BRIDGE_logError("Malformed axis element for constraint [%s]: %s", constraint.name.c_str(), e.what());
+          return false;
+        }
       }
     }
   }
@@ -140,28 +151,28 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
 
 }
 
-bool parseJointConstraint(JointConstraint &constraint, tinyxml2::XMLElement* config)
+bool parseJointConstraint(CouplingConstraint &constraint, tinyxml2::XMLElement* config)
 {
   constraint.clear();
 
   if(!parseConstraint(constraint, config))
     return false;
 
-  // Get Gear Ratio
-  tinyxml2::XMLElement *gr_xml = config->FirstChildElement("gear_ratio");
-  if (gr_xml)
+  // Get ratio
+  tinyxml2::XMLElement *ratio_xml = config->FirstChildElement("ratio");
+  if (ratio_xml)
   {
-    const char* gr = gr_xml->Attribute("value");
-    if (gr == NULL){
-      CONSOLE_BRIDGE_logDebug("urdfdom.gear_ratio: no gear ratio");
+    const char* ratio = ratio_xml->Attribute("value");
+    if (ratio == NULL){
+      CONSOLE_BRIDGE_logDebug("urdfdom.ratio: no ratio");
       return false;
     }
     else
     {
       try {
-        constraint.gear_ratio = strToDouble(gr);
+        constraint.ratio = strToDouble(ratio);
       } catch (std::runtime_error &) {
-        CONSOLE_BRIDGE_logError("gear ratio (%s) is not a valid float", gr);
+        CONSOLE_BRIDGE_logError("ratio (%s) is not a valid float", ratio);
         return false;
       }
     }

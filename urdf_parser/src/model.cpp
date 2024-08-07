@@ -47,7 +47,7 @@ namespace urdf{
 bool parseMaterial(Material &material, tinyxml2::XMLElement *config, bool only_name_is_ok);
 bool parseLink(Link &link, tinyxml2::XMLElement *config);
 bool parseJoint(Joint &joint, tinyxml2::XMLElement *config);
-bool parseJointConstraint(JointConstraint &constraint, tinyxml2::XMLElement *config);
+bool parseJointConstraint(CouplingConstraint &constraint, tinyxml2::XMLElement *config);
 bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement *config);
 
 ModelInterfaceSharedPtr  parseURDFFile(const std::string &path)
@@ -239,11 +239,11 @@ ModelInterfaceSharedPtr  parseURDF(const std::string &xml_string)
     }
   }
 
-  // Get all Joint Constraint elements
-  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("joint_constraint"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("joint_constraint"))
+  // Get all Coupling Constraint elements
+  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("coupling"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("coupling"))
   {
-    JointConstraintSharedPtr constraint;
-    constraint.reset(new JointConstraint);
+    CouplingConstraintSharedPtr constraint;
+    constraint.reset(new CouplingConstraint);
 
     if (parseJointConstraint(*constraint, constraint_xml))
     {
@@ -268,7 +268,7 @@ ModelInterfaceSharedPtr  parseURDF(const std::string &xml_string)
   }
 
   // Get all Loop Constraint elements
-  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("loop_constraint"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("loop_constraint"))
+  for (tinyxml2::XMLElement* constraint_xml = robot_xml->FirstChildElement("loop"); constraint_xml; constraint_xml = constraint_xml->NextSiblingElement("loop"))
   {
     LoopConstraintSharedPtr constraint;
     constraint.reset(new LoopConstraint);

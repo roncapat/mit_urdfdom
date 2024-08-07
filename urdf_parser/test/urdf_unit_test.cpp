@@ -362,21 +362,31 @@ TEST(URDF_UNIT_TEST, parse_constraint)
     "    <parent link=\"base_link\"/>"
     "    <child link=\"l3\"/>"
     "  </joint>"
-    "  <loop_constraint name=\"c1\">"
-    "    <parent link=\"l2\"/>"
-    "    <child link=\"l3\"/>"
-    "  </loop_constraint>"
+    "  <joint name=\"j4\" type=\"continuous\">"
+    "    <parent link=\"base_link\"/>"
+    "    <child link=\"l4\"/>"
+    "  </joint>"
+    "  <loop name=\"c1\" type=\"revolute\">"
+    "    <predecessor link=\"l2\"/>"
+    "    <successor link=\"l3\"/>"
+    "  </loop>"
+    "  <coupling name=\"c2\">"
+    "    <predecessor link=\"l1\"/>"
+    "    <successor link=\"l4\"/>"
+    "    <ratio value=\"6\"/>"
+    "  </coupling>"
     "  <link name=\"base_link\"/>"
     "  <link name=\"l1\"/>"
     "  <link name=\"l2\"/>"
     "  <link name=\"l3\"/>"
+    "  <link name=\"l4\"/>"
     "</robot>";
 
   urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(joint_str);
 
-  EXPECT_EQ(4u, urdf->links_.size());
-  EXPECT_EQ(3u, urdf->joints_.size());
-  EXPECT_EQ(1u, urdf->constraints_.size());
+  EXPECT_EQ(5u, urdf->links_.size());
+  EXPECT_EQ(4u, urdf->joints_.size());
+  EXPECT_EQ(2u, urdf->constraints_.size());
 
   EXPECT_TRUE(std::find(urdf->links_["l2"]->loop_links.begin(),
                         urdf->links_["l2"]->loop_links.end(),
@@ -384,6 +394,12 @@ TEST(URDF_UNIT_TEST, parse_constraint)
   EXPECT_TRUE(std::find(urdf->links_["l3"]->loop_links.begin(),
                         urdf->links_["l3"]->loop_links.end(),
                         urdf->links_["l1"]) != urdf->links_["l3"]->loop_links.end());
+  EXPECT_TRUE(std::find(urdf->links_["l1"]->loop_links.begin(),
+                        urdf->links_["l1"]->loop_links.end(),
+                        urdf->links_["l4"]) != urdf->links_["l1"]->loop_links.end());
+  EXPECT_TRUE(std::find(urdf->links_["l4"]->loop_links.begin(),
+                        urdf->links_["l4"]->loop_links.end(),
+                        urdf->links_["l1"]) != urdf->links_["l4"]->loop_links.end());
 }
 
 int main(int argc, char **argv)
