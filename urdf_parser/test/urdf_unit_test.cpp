@@ -355,24 +355,28 @@ TEST(URDF_UNIT_TEST, parse_constraint)
     "    <child link=\"l1\"/>"
     "  </joint>"
     "  <joint name=\"j2\" type=\"continuous\">"
-    "    <parent link=\"l1\"/>"
+    "    <parent link=\"base_link\"/>"
     "    <child link=\"l2\"/>"
     "  </joint>"
     "  <joint name=\"j3\" type=\"continuous\">"
-    "    <parent link=\"base_link\"/>"
+    "    <parent link=\"l1\"/>"
     "    <child link=\"l3\"/>"
     "  </joint>"
     "  <joint name=\"j4\" type=\"continuous\">"
-    "    <parent link=\"base_link\"/>"
+    "    <parent link=\"l3\"/>"
     "    <child link=\"l4\"/>"
     "  </joint>"
-    "  <loop name=\"c1\" type=\"revolute\">"
-    "    <predecessor link=\"l2\"/>"
-    "    <successor link=\"l3\"/>"
+    "  <joint name=\"j5\" type=\"continuous\">"
+    "    <parent link=\"l1\"/>"
+    "    <child link=\"l5\"/>"
+    "  </joint>"
+    "  <loop name=\"l1\" type=\"revolute\">"
+    "    <predecessor link=\"l4\"/>"
+    "    <successor link=\"l5\"/>"
     "  </loop>"
-    "  <coupling name=\"c2\">"
+    "  <coupling name=\"c1\">"
     "    <predecessor link=\"l1\"/>"
-    "    <successor link=\"l4\"/>"
+    "    <successor link=\"l2\"/>"
     "    <ratio value=\"6\"/>"
     "  </coupling>"
     "  <link name=\"base_link\"/>"
@@ -380,26 +384,32 @@ TEST(URDF_UNIT_TEST, parse_constraint)
     "  <link name=\"l2\"/>"
     "  <link name=\"l3\"/>"
     "  <link name=\"l4\"/>"
+    "  <link name=\"l5\"/>"
     "</robot>";
 
   urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(joint_str);
 
-  EXPECT_EQ(5u, urdf->links_.size());
-  EXPECT_EQ(4u, urdf->joints_.size());
+  EXPECT_EQ(6u, urdf->links_.size());
+  EXPECT_EQ(5u, urdf->joints_.size());
   EXPECT_EQ(2u, urdf->constraints_.size());
+  EXPECT_EQ(3u, urdf->clusters_.size());
 
-  EXPECT_TRUE(std::find(urdf->links_["l2"]->loop_links.begin(),
-                        urdf->links_["l2"]->loop_links.end(),
-                        urdf->links_["l3"]) != urdf->links_["l2"]->loop_links.end());
-  EXPECT_TRUE(std::find(urdf->links_["l3"]->loop_links.begin(),
-                        urdf->links_["l3"]->loop_links.end(),
-                        urdf->links_["l1"]) != urdf->links_["l3"]->loop_links.end());
   EXPECT_TRUE(std::find(urdf->links_["l1"]->loop_links.begin(),
                         urdf->links_["l1"]->loop_links.end(),
-                        urdf->links_["l4"]) != urdf->links_["l1"]->loop_links.end());
+                        urdf->links_["l2"]) != urdf->links_["l1"]->loop_links.end());
+  EXPECT_TRUE(std::find(urdf->links_["l2"]->loop_links.begin(),
+                        urdf->links_["l2"]->loop_links.end(),
+                        urdf->links_["l1"]) != urdf->links_["l2"]->loop_links.end());
   EXPECT_TRUE(std::find(urdf->links_["l4"]->loop_links.begin(),
                         urdf->links_["l4"]->loop_links.end(),
-                        urdf->links_["l1"]) != urdf->links_["l4"]->loop_links.end());
+                        urdf->links_["l5"]) != urdf->links_["l4"]->loop_links.end());
+  EXPECT_TRUE(std::find(urdf->links_["l5"]->loop_links.begin(),
+                        urdf->links_["l5"]->loop_links.end(),
+                        urdf->links_["l3"]) != urdf->links_["l5"]->loop_links.end());
+
+  // urdf::ClusterSharedPtr c1 = urdf->clusters_["base_link"];
+  // EXPECT_TRUE()
+
 }
 
 int main(int argc, char **argv)
