@@ -65,36 +65,36 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
   if(!parseConstraint(constraint, config))
     return false;
 
-  // Get transform from Parent Link to Constraint Frame on Parent Link
-  tinyxml2::XMLElement *parent_origin_xml = config->FirstChildElement("parent_origin");
-  if (!parent_origin_xml)
+  // Get transform from Predecessor Link to Constraint Frame on Predecessor Link
+  tinyxml2::XMLElement *predecessor_origin_xml = config->FirstChildElement("predecessor_origin");
+  if (!predecessor_origin_xml)
   {
-    CONSOLE_BRIDGE_logDebug("urdfdom: Constraint [%s] missing parent_origin tag describing transform from Parent Link to Constraint Frame, (using Identity transform).", constraint.name.c_str());
+    CONSOLE_BRIDGE_logDebug("urdfdom: Constraint [%s] missing predecessor_origin tag describing transform from Predecessor Link to Constraint Frame, (using Identity transform).", constraint.name.c_str());
     constraint.predecessor_to_joint_origin_transform.clear();
   }
   else
   {
-    if (!parsePoseInternal(constraint.predecessor_to_joint_origin_transform, parent_origin_xml))
+    if (!parsePoseInternal(constraint.predecessor_to_joint_origin_transform, predecessor_origin_xml))
     {
       constraint.predecessor_to_joint_origin_transform.clear();
-      CONSOLE_BRIDGE_logError("Malformed parent origin element for constraint [%s]", constraint.name.c_str());
+      CONSOLE_BRIDGE_logError("Malformed predecessor origin element for constraint [%s]", constraint.name.c_str());
       return false;
     }
   }
 
-  // Get transform from Child Link to Joint Frame on Child Link
-  tinyxml2::XMLElement *child_origin_xml = config->FirstChildElement("child_origin");
-  if (!child_origin_xml)
+  // Get transform from Successor Link to Joint Frame on Successor Link
+  tinyxml2::XMLElement *successor_origin_xml = config->FirstChildElement("successor_origin");
+  if (!successor_origin_xml)
   {
-    CONSOLE_BRIDGE_logDebug("urdfdom: Constraint [%s] missing child_origin tag describing transform from Child Link to Constraint Frame, (using Identity transform).", constraint.name.c_str());
+    CONSOLE_BRIDGE_logDebug("urdfdom: Constraint [%s] missing successor_origin tag describing transform from Successor Link to Constraint Frame, (using Identity transform).", constraint.name.c_str());
     constraint.successor_to_joint_origin_transform.clear();
   }
   else
   {
-    if (!parsePoseInternal(constraint.successor_to_joint_origin_transform, child_origin_xml))
+    if (!parsePoseInternal(constraint.successor_to_joint_origin_transform, successor_origin_xml))
     {
       constraint.successor_to_joint_origin_transform.clear();
-      CONSOLE_BRIDGE_logError("Malformed child origin element for constraint [%s]", constraint.name.c_str());
+      CONSOLE_BRIDGE_logError("Malformed successor origin element for constraint [%s]", constraint.name.c_str());
       return false;
     }
   }
