@@ -407,8 +407,16 @@ TEST(URDF_UNIT_TEST, parse_constraint)
                         urdf->links_["l5"]->loop_links.end(),
                         urdf->links_["l3"]) != urdf->links_["l5"]->loop_links.end());
 
-  // urdf::ClusterSharedPtr c1 = urdf->clusters_["base_link"];
-  // EXPECT_TRUE()
+  urdf::ClusterSharedPtr base_cluster = urdf->clusters_[urdf->containing_cluster_["base_link"]];
+  urdf::ClusterSharedPtr c1 = urdf->clusters_[urdf->containing_cluster_["l1"]];
+  urdf::ClusterSharedPtr c2 = urdf->clusters_[urdf->containing_cluster_["l3"]];
+
+  EXPECT_TRUE(c1 == urdf->clusters_[urdf->containing_cluster_["l2"]]);
+  EXPECT_TRUE(c2 == urdf->clusters_[urdf->containing_cluster_["l4"]]);
+  EXPECT_TRUE(c2 == urdf->clusters_[urdf->containing_cluster_["l5"]]);
+
+  EXPECT_TRUE(base_cluster == c1->getParent());
+  EXPECT_TRUE(c1 == c2->getParent());
 
 }
 
