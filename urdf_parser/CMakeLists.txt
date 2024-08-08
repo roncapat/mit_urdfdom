@@ -44,6 +44,7 @@ add_urdfdom_library(
     src/model.cpp
     src/link.cpp
     src/joint.cpp
+    src/constraint.cpp
     src/world.cpp)
 
 add_urdfdom_library(
@@ -53,7 +54,8 @@ add_urdfdom_library(
     src/pose.cpp
     src/model.cpp
     src/link.cpp
-    src/joint.cpp)
+    src/joint.cpp
+    src/constraint.cpp)
 
 add_urdfdom_library(
   LIBNAME
