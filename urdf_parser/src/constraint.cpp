@@ -99,7 +99,7 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
     }
   }
 
-    // Get Joint type
+  // Get Joint type
   const char* type_char = config->Attribute("type");
   if (!type_char)
   {
@@ -120,7 +120,7 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
     constraint.type = LoopConstraint::FIXED;
   else
   {
-    CONSOLE_BRIDGE_logError("Joint [%s] has no known type [%s]", constraint.name.c_str(), type_str.c_str());
+    CONSOLE_BRIDGE_logError("Constraint [%s] has no known type [%s]", constraint.name.c_str(), type_str.c_str());
     return false;
   }
 
