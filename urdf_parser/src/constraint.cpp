@@ -151,7 +151,7 @@ bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement* confi
 
 }
 
-bool parseJointConstraint(CouplingConstraint &constraint, tinyxml2::XMLElement* config)
+bool parseCouplingConstraint(CouplingConstraint &constraint, tinyxml2::XMLElement* config)
 {
   constraint.clear();
 

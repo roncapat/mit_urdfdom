@@ -47,7 +47,7 @@ namespace urdf{
 bool parseMaterial(Material &material, tinyxml2::XMLElement *config, bool only_name_is_ok);
 bool parseLink(Link &link, tinyxml2::XMLElement *config);
 bool parseJoint(Joint &joint, tinyxml2::XMLElement *config);
-bool parseJointConstraint(CouplingConstraint &constraint, tinyxml2::XMLElement *config);
+bool parseCouplingConstraint(CouplingConstraint &constraint, tinyxml2::XMLElement *config);
 bool parseLoopConstraint(LoopConstraint &constraint, tinyxml2::XMLElement *config);
 
 ModelInterfaceSharedPtr  parseURDFFile(const std::string &path)
@@ -245,7 +245,7 @@ ModelInterfaceSharedPtr  parseURDF(const std::string &xml_string)
     CouplingConstraintSharedPtr constraint;
     constraint.reset(new CouplingConstraint);
 
-    if (parseJointConstraint(*constraint, constraint_xml))
+    if (parseCouplingConstraint(*constraint, constraint_xml))
     {
       if (model->getConstraint(constraint->name))
       {
