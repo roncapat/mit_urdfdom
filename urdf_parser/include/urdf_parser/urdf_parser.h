@@ -149,6 +149,7 @@ namespace urdf{
 
   URDFDOM_DLLAPI ModelInterfaceSharedPtr parseURDF(const std::string &xml_string);
   URDFDOM_DLLAPI ModelInterfaceSharedPtr parseURDFFile(const std::string &path);
+  URDFDOM_DLLAPI ModelInterfaceSharedPtr parseURDFFiles(const std::vector<std::string> &paths);
 
   [[deprecated("File an issue at https://github.com/ros/urdfdom if you rely on this")]]
   URDFDOM_DLLAPI tinyxml2::XMLDocument*  exportURDF(ModelInterfaceSharedPtr &model);

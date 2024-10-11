@@ -64,6 +64,92 @@ ModelInterfaceSharedPtr  parseURDFFile(const std::string &path)
     return urdf::parseURDF( xml_str );
 }
 
+ModelInterfaceSharedPtr  parseURDFFiles(const std::vector<std::string> &paths)
+{
+    ModelInterfaceSharedPtr model(new ModelInterface);
+    model->clear();
+
+    for (std::vector<std::string>::const_iterator path = paths.begin(); path != paths.end(); path++)
+    {
+      ModelInterfaceSharedPtr m = parseURDFFile(*path);
+      if (!m)
+      {
+        CONSOLE_BRIDGE_logError(("Failed to parse URDF file: " + *path).c_str());
+        model.reset();
+        return model;
+      }
+
+      // TODO(@MatthewChignoli): Need to add things like material and geometry
+
+      // Add links from m to the model
+      for (const auto &[link_name, link] : m->links_)
+      {
+        if (model->getLink(link_name))
+        {
+          continue;
+        }
+        link->constraints.clear();
+        link->loop_links.clear();
+        model->links_.insert(make_pair(link_name, link));
+      }
+
+      // Add joints from m to the model
+      for (const auto &[joint_name, joint] : m->joints_)
+      {
+        if (model->getJoint(joint_name))
+        {
+          CONSOLE_BRIDGE_logError(("Joint " + joint_name + " is not unique").c_str());
+          model.reset();
+          return model;
+        }
+        model->joints_.insert(make_pair(joint_name, joint));
+      }
+
+      // Add constraints from m to the model
+      for (const auto &[constraint_name, constraint] : m->constraints_)
+      {
+        if (model->getConstraint(constraint_name))
+        {
+          CONSOLE_BRIDGE_logError(("Constraint " + constraint_name + " is not unique").c_str());
+          model.reset();
+          return model;
+        }
+        model->constraints_.insert(make_pair(constraint_name, constraint));
+      }
+    }
+
+    // every link has children links and joints, but no parents, so we create a
+    // local convenience data structure for keeping child->parent relations
+    std::map<std::string, std::string> parent_link_tree;
+    parent_link_tree.clear();
+
+    // building tree: name mapping
+    try
+    {
+      model->initTree(parent_link_tree);
+    }
+    catch (ParseError &e)
+    {
+      CONSOLE_BRIDGE_logError("Failed to build tree: %s", e.what());
+      model.reset();
+      return model;
+    }
+
+    // find the root link
+    try
+    {
+      model->initRoot(parent_link_tree);
+    }
+    catch (ParseError &e)
+    {
+      CONSOLE_BRIDGE_logError("Failed to find root link: %s", e.what());
+      model.reset();
+      return model;
+    }
+
+    return model;
+}
+
 bool assignMaterial(const VisualSharedPtr& visual, ModelInterfaceSharedPtr& model, const char* link_name)
 {
   if (visual->material_name.empty())
@@ -331,6 +417,7 @@ ModelInterfaceSharedPtr  parseURDF(const std::string &xml_string)
 bool exportMaterial(Material &material, tinyxml2::XMLElement *config);
 bool exportLink(Link &link, tinyxml2::XMLElement *config);
 bool exportJoint(Joint &joint, tinyxml2::XMLElement *config);
+bool exportConstraint(Constraint &constraint, tinyxml2::XMLElement *config);
 
 tinyxml2::XMLDocument*  exportURDFInternal(const ModelInterface &model)
 {
@@ -357,6 +444,12 @@ tinyxml2::XMLDocument*  exportURDFInternal(const ModelInterface &model)
   {
     CONSOLE_BRIDGE_logDebug("urdfdom: exporting joint [%s]\n",j->second->name.c_str());
     exportJoint(*(j->second), robot);
+  }
+
+  for (std::map<std::string, ConstraintSharedPtr>::const_iterator c=model.constraints_.begin(); c!=model.constraints_.end(); ++c)
+  {
+    CONSOLE_BRIDGE_logDebug("urdfdom: exporting constraint [%s]\n",c->second->name.c_str());
+    exportConstraint(*(c->second), robot);
   }
 
   return doc;
